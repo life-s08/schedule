@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>1週間スケジューラー</title>
+  
+  <!-- iOS PWA 設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="日程調整">
+
+  <!-- Android / PWA 設定 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#2563eb">
+
+  <!-- アプリアイコン (SVG Data URI) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%232563eb'/%3E%3Cpath d='M120 180 h272 v220 a20 20 0 0 1 -20 20 h-232 a20 20 0 0 1 -20 -20 z' fill='%23ffffff'/%3E%3Crect x='120' y='120' width='272' height='60' rx='10' fill='%231d4ed8'/%3E%3Ccircle cx='180' y='100' r='12' fill='%23ffffff'/%3E%3Ccircle cx='332' y='100' r='12' fill='%23ffffff'/%3E%3Crect x='160' y='220' width='50' height='40' rx='6' fill='%233b82f6' opacity='0.3'/%3E%3Crect x='231' y='220' width='50' height='40' rx='6' fill='%232563eb'/%3E%3Crect x='302' y='220' width='50' height='40' rx='6' fill='%233b82f6' opacity='0.3'/%3E%3Crect x='160' y='280' width='50' height='40' rx='6' fill='%232563eb'/%3E%3Crect x='231' y='280' width='50' height='40' rx='6' fill='%233b82f6' opacity='0.3'/%3E%3Crect x='302' y='280' width='50' height='40' rx='6' fill='%232563eb'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%232563eb'/%3E%3Cpath d='M120 180 h272 v220 a20 20 0 0 1 -20 20 h-232 a20 20 0 0 1 -20 -20 z' fill='%23ffffff'/%3E%3Crect x='120' y='120' width='272' height='60' rx='10' fill='%231d4ed8'/%3E%3Ccircle cx='180' y='100' r='12' fill='%23ffffff'/%3E%3Ccircle cx='332' y='100' r='12' fill='%23ffffff'/%3E%3Crect x='160' y='220' width='50' height='40' rx='6' fill='%233b82f6' opacity='0.3'/%3E%3Crect x='231' y='220' width='50' height='40' rx='6' fill='%232563eb'/%3E%3Crect x='302' y='220' width='50' height='40' rx='6' fill='%233b82f6' opacity='0.3'/%3E%3Crect x='160' y='280' width='50' height='40' rx='6' fill='%232563eb'/%3E%3Crect x='231' y='280' width='50' height='40' rx='6' fill='%233b82f6' opacity='0.3'/%3E%3Crect x='302' y='280' width='50' height='40' rx='6' fill='%232563eb'/%3E%3C/svg%3E">
+
+  <!-- Web App Manifest (Data URI) -->
+  <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%221%E9%80%B1%E9%96%93%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%83%BC%22%2C%22short_name%22%3A%22%E6%97%A5%E7%A1%9D%E8%AA%BF%E6%95%B4%22%2C%22description%22%3A%22%E7%A9%BA%E3%81%8D%E6%99%82%E9%96%93%E3%82%92%E3%81%AA%E3%81%9E%E3%81%A3%E3%81%A6%E3%83%86%E3%82%AD%E3%82%B9%E3%83%8B%E5%8C%96%E3%81%99%E3%82%8B%E3%83%84%E3%83%BC%E3%83%AB%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%232563eb%22%7D">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-active: #1d4ed8;
+      --primary-light: #eff6ff;
+      --border: #d1d5db;
+      --border-dark: #9ca3af;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --selected: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0 auto;
+      max-width: 640px;
+      padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overscroll-behavior: none;
+    }
+
+    /* アプリ用ヘッダー */
+    .header-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 10px 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    h1 {
+      font-size: 1rem;
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .help-icon {
+      background: #f1f5f9;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-sm {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      padding: 5px 9px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: var(--text);
+      font-weight: 600;
+      touch-action: manipulation;
+      transition: background 0.1s;
+    }
+
+    .btn-sm:active {
+      background: #e2e8f0;
+    }
+
+    .instructions-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 0 4px;
+      font-weight: 500;
+    }
+
+    /* グリッドテーブル */
+    .grid-container {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      overflow-x: auto;
+      border: 1.5px solid var(--border-dark);
+      max-height: 52vh;
+      overflow-y: auto;
+      position: relative;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .timetable {
+      display: grid;
+      grid-template-columns: 44px repeat(7, minmax(42px, 1fr));
+      width: 100%;
+      min-width: 340px;
+    }
+
+    .cell {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.7rem;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .header-cell {
+      background: #f1f5f9;
+      font-weight: bold;
+      position: -webkit-sticky;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 2px solid var(--border-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 38px;
+      line-height: 1.1;
+    }
+
+    .header-cell.time-header {
+      left: 0;
+      z-index: 11;
+      background: #e2e8f0;
+      font-size: 0.68rem;
+    }
+
+    .header-cell .day-name {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .header-cell .day-date {
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .time-label {
+      background: #f8fafc;
+      font-weight: 600;
+      color: var(--text-muted);
+      position: -webkit-sticky;
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      border-right: 2px solid var(--border-dark);
+    }
+
+    .slot-cell {
+      cursor: pointer;
+      height: 28px;
+      transition: background-color 0.08s ease;
+      background-color: #ffffff;
+      touch-action: manipulation;
+    }
+
+    .slot-cell:active {
+      background-color: #dbeafe;
+    }
+
+    .slot-cell.selected {
+      background-color: var(--selected) !important;
+      border-color: #1d4ed8;
+    }
+
+    .slot-cell[data-time$=":00"] {
+      border-top: 1.5px solid var(--border-dark);
+    }
+
+    .slot-cell[data-time$=":30"] {
+      border-top: 1px dashed var(--border);
+    }
+
+    /* アクション・出力エリア */
+    .output-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 180px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      resize: vertical;
+      box-sizing: border-box;
+      user-select: text;
+      -webkit-user-select: text;
+      background: #f8fafc;
+      color: var(--text);
+    }
+
+    .action-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 60px;
+      gap: 6px;
+    }
+
+    .btn {
+      padding: 10px 4px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: center;
+      touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: opacity 0.1s;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-share { background: #0284c7; color: white; }
+    .btn-line { background: #06c755; color: white; }
+    .btn-clear { background: #f1f5f9; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn:active { opacity: 0.8; }
+
+    /* モーダル */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-card h2 {
+      margin-top: 0;
+      font-size: 1.05rem;
+      text-align: center;
+    }
+
+    .modal-card ol {
+      padding-left: 20px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .modal-close-btn {
+      width: 100%;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-card">
+    <div class="app-title">
+      <h1>📅 日程調整</h1>
+      <button class="help-icon" onclick="openModal()" title="ホーム画面への追加方法">?</button>
+    </div>
+    <div class="week-nav">
+      <button class="btn-sm" onclick="changeWeek(-1)">前週</button>
+      <button class="btn-sm" onclick="resetToToday()">今週</button>
+      <button class="btn-sm" onclick="changeWeek(1)">次週</button>
+    </div>
+  </div>
+
+  <div class="instructions-bar">
+    <span>👆 空き時間をなぞって選択</span>
+    <span id="selectedCount" style="color: var(--primary); font-weight: 700;">選択中: 0コマ</span>
+  </div>
+
+  <div class="grid-container" id="gridContainer">
+    <div class="timetable" id="timetable"></div>
+  </div>
+
+  <div class="output-card">
+    <textarea id="outputText" readonly placeholder="時間帯を選択するとテキストが自動作成されます"></textarea>
+    <div class="action-btns">
+      <button class="btn btn-primary" onclick="copyText()">コピー</button>
+      <button class="btn btn-share" onclick="shareNative()">共有</button>
+      <button class="btn btn-line" onclick="sendLine()">LINE</button>
+      <button class="btn btn-clear" onclick="clearSelection()">消去</button>
+    </div>
+  </div>
+
+  <!-- アプリインストール・ヘルプモーダル -->
+  <div class="modal-overlay" id="helpModal" onclick="closeModal(event)">
+    <div class="modal-card">
+      <h2>📱 ホーム画面に追加（アプリ化）</h2>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">Web公開後のURLをスマホで開いて設定します：</p>
+      
+      <p style="font-weight: bold; font-size: 0.85rem; margin: 10px 0 4px 0;">【iPhone (Safari)】</p>
+      <ol>
+        <li>画面下の <strong>共有ボタン (⬆️)</strong> をタップ</li>
+        <li>メニューから <strong>「ホーム画面に追加」</strong> を選択</li>
+      </ol>
+
+      <p style="font-weight: bold; font-size: 0.85rem; margin: 10px 0 4px 0;">【Android (Chrome)】</p>
+      <ol>
+        <li>右上メニュー (<strong>⋮</strong>) をタップ</li>
+        <li><strong>「ホーム画面に追加」</strong> を選択</li>
+      </ol>
+
+      <button class="btn btn-primary modal-close-btn" onclick="closeModal()">閉じる</button>
+    </div>
+  </div>
+
+<script>
+  let currentStartDate = new Date();
+  // 月曜日開始に設定
+  const day = currentStartDate.getDay();
+  const diff = currentStartDate.getDate() - day + (day === 0 ? -6 : 1);
+  currentStartDate.setDate(diff);
+
+  const selectedSlots = new Set();
+  let isDragging = false;
+  let isSelectingMode = true;
+  let lastTouchTime = 0;
+
+  function renderTimetable() {
+    const timetable = document.getElementById('timetable');
+    if (!timetable) return;
+    timetable.innerHTML = '';
+
+    // 日付配列の作成 (7日間)
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(currentStartDate);
+      d.setDate(currentStartDate.getDate() + i);
+      dates.push(d);
+    }
+
+    // ヘッダー行
+    const timeHeader = document.createElement('div');
+    timeHeader.className = 'cell header-cell time-header';
+    timeHeader.textContent = '時間';
+    timetable.appendChild(timeHeader);
+
+    const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+    dates.forEach(d => {
+      const cell = document.createElement('div');
+      cell.className = 'cell header-cell';
+      const m = d.getMonth() + 1;
+      const dateNum = d.getDate();
+      const dayName = weekDays[d.getDay()];
+      cell.innerHTML = `
+        <span class="day-name">${dayName}</span>
+        <span class="day-date">${m}/${dateNum}</span>
+      `;
+      timetable.appendChild(cell);
+    });
+
+    // タイムスロット (08:00 〜 21:30 / 30分単位)
+    for (let h = 8; h <= 21; h++) {
+      for (let m of [0, 30]) {
+        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        
+        const timeCell = document.createElement('div');
+        timeCell.className = 'cell time-label';
+        timeCell.textContent = m === 0 ? timeStr : '';
+        timetable.appendChild(timeCell);
+
+        dates.forEach(d => {
+          const mStr = String(d.getMonth() + 1).padStart(2, '0');
+          const dStr = String(d.getDate()).padStart(2, '0');
+          const dateStr = `${d.getFullYear()}-${mStr}-${dStr}`;
+          const slotKey = `${dateStr}|${timeStr}`;
+
+          const slotCell = document.createElement('div');
+          slotCell.className = 'cell slot-cell';
+          slotCell.dataset.key = slotKey;
+          slotCell.dataset.date = dateStr;
+          slotCell.dataset.time = timeStr;
+
+          if (selectedSlots.has(slotKey)) {
+            slotCell.classList.add('selected');
+          }
+
+          timetable.appendChild(slotCell);
+        });
+      }
+    }
+
+    attachEvents();
+  }
+
+  function attachEvents() {
+    const container = document.getElementById('gridContainer');
+    const cells = document.querySelectorAll('.slot-cell');
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let initialTouchCell = null;
+    let isMouseDown = false;
+
+    cells.forEach(cell => {
+      // マウスクリック (PC用)
+      cell.addEventListener('mousedown', (e) => {
+        if (Date.now() - lastTouchTime < 800) return; // タッチ直後の疑似マウスイベントを防止
+        e.preventDefault();
+        isMouseDown = true;
+        const key = cell.dataset.key;
+        isSelectingMode = !selectedSlots.has(key);
+        toggleSlot(cell, isSelectingMode);
+      });
+
+      cell.addEventListener('mouseenter', () => {
+        if (isMouseDown) {
+          toggleSlot(cell, isSelectingMode);
+        }
+      });
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isMouseDown) {
+        isMouseDown = false;
+        generateText();
+      }
+    });
+
+    // タッチイベント (スマホタップ & スワイプ用)
+    container.addEventListener('touchstart', (e) => {
+      lastTouchTime = Date.now();
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      
+      if (target && target.classList.contains('slot-cell')) {
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        initialTouchCell = target;
+        isDragging = false;
+        const key = target.dataset.key;
+        isSelectingMode = !selectedSlots.has(key);
+      } else {
+        initialTouchCell = null;
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      lastTouchTime = Date.now();
+      if (!initialTouchCell) return;
+
+      const touch = e.touches[0];
+      const dist = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
+
+      // 10px以上動いたらドラッグ選択モード起動
+      if (dist > 10 && !isDragging) {
+        isDragging = true;
+        toggleSlot(initialTouchCell, isSelectingMode);
+      }
+
+      if (isDragging) {
+        if (e.cancelable) e.preventDefault(); // なぞり選択中は画面スクロールを抑止
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (target && target.classList.contains('slot-cell')) {
+          toggleSlot(target, isSelectingMode);
+        }
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchend', (e) => {
+      lastTouchTime = Date.now();
+      if (initialTouchCell) {
+        if (!isDragging) {
+          // 移動せずに指を離した（単一タップ操作）場合
+          if (e.cancelable) e.preventDefault();
+          toggleSlot(initialTouchCell, isSelectingMode);
+        }
+        generateText();
+      }
+      isDragging = false;
+      initialTouchCell = null;
+    });
+
+    container.addEventListener('touchcancel', () => {
+      isDragging = false;
+      initialTouchCell = null;
+    });
+  }
+
+  function toggleSlot(cell, select) {
+    const key = cell.dataset.key;
+    if (select) {
+      if (!selectedSlots.has(key)) {
+        selectedSlots.add(key);
+        cell.classList.add('selected');
+        triggerHaptic();
+      }
+    } else {
+      if (selectedSlots.has(key)) {
+        selectedSlots.delete(key);
+        cell.classList.remove('selected');
+        triggerHaptic();
+      }
+    }
+    updateSelectedCount();
+  }
+
+  function triggerHaptic() {
+    if (navigator.vibrate) {
+      navigator.vibrate(8);
+    }
+  }
+
+  function updateSelectedCount() {
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) {
+      countEl.textContent = `選択中: ${selectedSlots.size}コマ`;
+    }
+  }
+
+  function generateText() {
+    updateSelectedCount();
+    if (selectedSlots.size === 0) {
+      document.getElementById('outputText').value = '';
+      return;
+    }
+
+    const grouped = {};
+    selectedSlots.forEach(key => {
+      const [date, time] = key.split('|');
+      if (!grouped[date]) grouped[date] = [];
+      grouped[date].push(time);
+    });
+
+    let scheduleLines = [];
+
+    Object.keys(grouped).sort().forEach(dateStr => {
+      const times = grouped[dateStr].sort();
+      const mergedRanges = [];
+      
+      let start = null;
+      let prev = null;
+
+      times.forEach(t => {
+        if (!start) {
+          start = t;
+          prev = t;
+        } else {
+          const [pH, pM] = prev.split(':').map(Number);
+          const expectedM = pM + 30;
+          const expectedH = pH + Math.floor(expectedM / 60);
+          const expectedTime = `${String(expectedH).padStart(2, '0')}:${String(expectedM % 60).padStart(2, '0')}`;
+
+          if (t === expectedTime) {
+            prev = t;
+          } else {
+            mergedRanges.push(formatTimeRange(start, prev));
+            start = t;
+            prev = t;
+          }
+        }
+      });
+      if (start) {
+        mergedRanges.push(formatTimeRange(start, prev));
+      }
+
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dObj = new Date(y, m - 1, d);
+      const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+      const formattedDate = `${m}/${d}(${weekDays[dObj.getDay()]})`;
+
+      scheduleLines.push(`${formattedDate} ${mergedRanges.join('、')}`);
+    });
+
+    const fullText = `オンラインにて30分程度お時間をいただければと思います。
+下記のご都合はいかがでしょうか？
+
+${scheduleLines.join('\n')}
+
+難し場合は再調整いたします。
+よろしくお願いいたします。
+
+吉野`;
+
+    document.getElementById('outputText').value = fullText;
+  }
+
+  function formatTimeRange(start, last) {
+    const [h, m] = last.split(':').map(Number);
+    let endM = m + 30;
+    let endH = h + Math.floor(endM / 60);
+    const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM % 60).padStart(2, '0')}`;
+    return `${start}〜${endTimeStr}`;
+  }
+
+  function changeWeek(offset) {
+    currentStartDate.setDate(currentStartDate.getDate() + offset * 7);
+    renderTimetable();
+    generateText();
+  }
+
+  function resetToToday() {
+    currentStartDate = new Date();
+    const day = currentStartDate.getDay();
+    const diff = currentStartDate.getDate() - day + (day === 0 ? -6 : 1);
+    currentStartDate.setDate(diff);
+    renderTimetable();
+    generateText();
+  }
+
+  function clearSelection() {
+    selectedSlots.clear();
+    renderTimetable();
+    generateText();
+  }
+
+  function copyText() {
+    const text = document.getElementById('outputText').value;
+    if (!text) return;
+    
+    const textarea = document.getElementById('outputText');
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      showToast("クリップボードにコピーしました");
+    } catch (err) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast("クリップボードにコピーしました"));
+      }
+    }
+  }
+
+  function shareNative() {
+    const text = document.getElementById('outputText').value;
+    if (!text) return;
+
+    if (navigator.share) {
+      navigator.share({
+        title: '日程候補のご案内',
+        text: text
+      }).catch(() => {});
+    } else {
+      copyText();
+    }
+  }
+
+  function sendLine() {
+    const text = document.getElementById('outputText').value;
+    if (!text) return;
+    const url = `https://line.me/R/share?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  }
+
+  function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:8px 18px;border-radius:20px;font-size:0.8rem;z-index:200;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-weight:600;';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  }
+
+  function openModal() {
+    document.getElementById('helpModal').classList.add('active');
+  }
+
+  function closeModal(e) {
+    if (!e || e.target === document.getElementById('helpModal') || e.target.classList.contains('modal-close-btn')) {
+      document.getElementById('helpModal').classList.remove('active');
+    }
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      const swCode = `
+        self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('fetch', e => {
+          e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'text/javascript' });
+      const blobUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(blobUrl).catch(() => {});
+    });
+  }
+
+  // DOM構築完了時に確実に描画を実行
+  document.addEventListener('DOMContentLoaded', renderTimetable);
+  window.addEventListener('load', renderTimetable);
+</script>
+</body>
+</html>
